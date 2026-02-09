@@ -74,6 +74,33 @@
       const statsEl = document.getElementById("stats");
       const speciesEl = document.getElementById("species-list");
 
+      var svenskaArtnamn = {
+        "Aegithalos caudatus": "Stjärtmes",
+        "Coccothraustes coccothraustes": "Stenknäck",
+        "Cyanistes caeruleus": "Blåmes",
+        "Chloris chloris": "Grönfink",
+        "Cygnus olor": "Knölsvan",
+        "Dendrocopos major": "Större hackspett",
+        "Emberiza citrinella": "Gulsparv",
+        "Fringilla coelebs": "Bofink",
+        "Fringilla montifringilla": "Bergfink",
+        "Parus major": "Talgoxe",
+        "Passer montanus": "Pilfink",
+        "Periparus ater": "Svartmes",
+        "Poecile montanus": "Bergtita",
+        "Poecile palustris": "Entita",
+        "Pyrrhula pyrrhula": "Domherre",
+        "Regulus regulus": "Kungsfågel",
+        "Sitta europaea": "Nötväcka",
+        "Spinus spinus": "Grönsiska",
+        "Turdus merula": "Koltrast"
+      };
+      function svensktNamn(d) {
+        if (d.vernacularName) return d.vernacularName;
+        var sn = svenskaArtnamn[d.species || d.scientificName];
+        return sn || null;
+      }
+
       const map = L.map("map").setView([62.2, 15.5], 5);
       L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
         attribution: "&copy; OpenStreetMap, &copy; CARTO",
@@ -104,7 +131,12 @@
 
         const layer = L.layerGroup();
         withCoords.forEach(function (d) {
-          const popup = "<strong>" + (d.species || d.scientificName || "—") + "</strong>" +
+          var vetenskap = d.species || d.scientificName || "—";
+          var svenskt = svensktNamn(d);
+          var namnRad = svenskt
+            ? "<strong>" + svenskt + "</strong> <span style=\"color:var(--muted);font-size:0.9em\">(" + vetenskap + ")</span>"
+            : "<strong>" + vetenskap + "</strong>";
+          const popup = namnRad +
             (d.eventDate ? "<br>Datum: " + d.eventDate : "") +
             (d.locality ? "<br>Plats: " + d.locality : "") +
             (d.stateProvince ? " (" + d.stateProvince + ")" : "");
