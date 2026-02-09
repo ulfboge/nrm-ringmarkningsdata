@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ringmärkningsdata Sverige | NRM via GBIF</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --text: #e6edf3;
+      --muted: #7d8590;
+      --accent: #58a6ff;
+      --green: #3fb950;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      padding: 1rem 1.5rem;
+      background: var(--surface);
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    h1 { font-size: 1.25rem; font-weight: 600; margin: 0; }
+    .sub { font-size: 0.875rem; color: var(--muted); margin-top: 0.25rem; }
+    .sub a { color: var(--accent); }
+    main { display: flex; flex-direction: column; height: calc(100vh - 80px); }
+    #map { flex: 1; min-height: 320px; }
+    .panel {
+      background: var(--surface);
+      border-top: 1px solid rgba(255,255,255,.06);
+      padding: 1rem 1.5rem;
+      max-height: 220px;
+      overflow: auto;
+    }
+    .panel h2 { font-size: 0.875rem; margin: 0 0 0.5rem 0; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .stats { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .stat { font-size: 1.125rem; }
+    .stat strong { color: var(--green); }
+    #species-list { font-size: 0.875rem; color: var(--muted); }
+    #species-list span { margin-right: 0.75rem; }
+    .loading { padding: 2rem; text-align: center; color: var(--muted); }
+    .error { color: #f85149; }
+    .fallback { margin-top: 0.75rem; padding: 0.75rem; background: rgba(255,255,255,.05); border-radius: 6px; font-size: 0.875rem; }
+    .fallback label { color: var(--accent); cursor: pointer; text-decoration: underline; }
+    .fallback input[type="file"] { display: none; }
+    .leaflet-popup-content { margin: 0.5rem 0.75rem; font-size: 0.8125rem; }
+    .leaflet-popup-content strong { display: block; margin-bottom: 0.25rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Ringmärkningsdata Sverige</h1>
+    <p class="sub">Naturhistoriska riksmuseet (Ringmärkningscentralen) via <a href="https://www.gbif.org/dataset/4f70108a-dda7-4e8b-8298-babaee5182c3" target="_blank" rel="noopener">GBIF</a></p>
+  </header>
+  <main>
+    <div id="map"></div>
+    <div class="panel">
+      <h2>Översikt</h2>
+      <div id="stats" class="stats"></div>
+      <div id="species-list"></div>
+    </div>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    (function () {
+      const mapEl = document.getElementById("map");
+      const statsEl = document.getElementById("stats");
+      const speciesEl = document.getElementById("species-list");
+
+      const map = L.map("map").setView([62.2, 15.5], 5);
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+        attribution: "&copy; OpenStreetMap, &copy; CARTO",
+      }).addTo(map);
+
+      function render(data) {
+        const withCoords = data.filter(function (d) {
+          return d.decimalLatitude != null && d.decimalLongitude != null;
+        });
+        const byYear = {};
+        const bySpecies = {};
+        withCoords.forEach(function (d) {
+          const y = d.year || "Okänt";
+          byYear[y] = (byYear[y] || 0) + 1;
+          const sp = d.species || d.scientificName || "Okänd";
+          bySpecies[sp] = (bySpecies[sp] || 0) + 1;
+        });
+
+        statsEl.innerHTML =
+          "<div class=\"stat\">Totalt <strong>" + withCoords.length + "</strong> poster med koordinater</div>" +
+          "<div class=\"stat\">Antal arter: <strong>" + Object.keys(bySpecies).length + "</strong></div>";
+
+        const topSpecies = Object.entries(bySpecies)
+          .sort(function (a, b) { return b[1] - a[1]; })
+          .slice(0, 15);
+        speciesEl.innerHTML = "<span>Topp 15 arter (antal):</span> " +
+          topSpecies.map(function (x) { return x[0] + " (" + x[1] + ")"; }).join(" · ");
+
+        const layer = L.layerGroup();
+        withCoords.forEach(function (d) {
+          const popup = "<strong>" + (d.species || d.scientificName || "—") + "</strong>" +
+            (d.eventDate ? "<br>Datum: " + d.eventDate : "") +
+            (d.locality ? "<br>Plats: " + d.locality : "") +
+            (d.stateProvince ? " (" + d.stateProvince + ")" : "");
+          L.marker([d.decimalLatitude, d.decimalLongitude])
+            .bindPopup(popup)
+            .addTo(layer);
+        });
+        layer.addTo(map);
+        if (withCoords.length > 0) {
+          const bounds = L.latLngBounds(withCoords.map(function (d) { return [d.decimalLatitude, d.decimalLongitude]; }));
+          map.fitBounds(bounds, { padding: [24, 24], maxZoom: 10 });
+        }
+      }
+
+      function onError(err) {
+        console.error(err);
+        statsEl.innerHTML =
+          "<div class=\"error\">Kunde inte ladda data automatiskt (vanligt om du öppnat filen direkt från disken).</div>" +
+          "<div class=\"fallback\">Välj fil manuellt: <label for=\"file-input\">Välj <code>data/occurrences.json</code></label> eller kör <code>python analysis/fetch_gbif.py</code> och öppna sidan via en lokal server (t.ex. <code>npx serve site</code>).<input type=\"file\" id=\"file-input\" accept=\"application/json,.json\" /></div>";
+        speciesEl.innerHTML = "";
+        document.getElementById("file-input").addEventListener("change", function (e) {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = function () {
+            try {
+              const data = JSON.parse(reader.result);
+              if (Array.isArray(data)) { render(data); return; }
+              if (data && Array.isArray(data.results)) { render(data.results); return; }
+              render([]);
+            } catch (err2) {
+              statsEl.innerHTML = "<div class=\"error\">Ogiltig JSON: " + err2.message + "</div>";
+            }
+          };
+          reader.readAsText(file);
+        });
+      }
+
+      fetch("data/occurrences.json")
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error(r.statusText)); })
+        .then(function (data) {
+          if (Array.isArray(data)) return data;
+          if (data && Array.isArray(data.results)) return data.results;
+          return [];
+        })
+        .then(render)
+        .catch(onError);
+    })();
+  </script>
+</body>
+</html>
