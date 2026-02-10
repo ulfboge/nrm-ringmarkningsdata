@@ -40,6 +40,8 @@
       overflow: auto;
     }
     .panel h2 { font-size: 0.875rem; margin: 0 0 0.5rem 0; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--muted); }
+    .controls select { background: #111827; color: var(--text); border-radius: 4px; border: 1px solid rgba(255,255,255,.12); padding: 0.2rem 0.4rem; }
     .stats { display: flex; gap: 1.5rem; flex-wrap: wrap; }
     .stat { font-size: 1.125rem; }
     .stat strong { color: var(--green); }
@@ -63,6 +65,12 @@
     <div id="map"></div>
     <div class="panel">
       <h2>Översikt</h2>
+      <div class="controls">
+        <label for="region-filter">Område:</label>
+        <select id="region-filter">
+          <option value="">Hela Sverige</option>
+        </select>
+      </div>
       <div id="stats" class="stats"></div>
       <div id="species-list"></div>
     </div>
@@ -73,6 +81,7 @@
       const mapEl = document.getElementById("map");
       const statsEl = document.getElementById("stats");
       const speciesEl = document.getElementById("species-list");
+      const regionSelect = document.getElementById("region-filter");
 
       var svenskaArtnamn = {
         "Acanthis flammea": "Gråsiska",
@@ -149,6 +158,9 @@
       L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
         attribution: "&copy; OpenStreetMap, &copy; CARTO",
       }).addTo(map);
+      let markersLayer = L.layerGroup().addTo(map);
+      let allData = [];
+      let currentRegion = "";
 
       function render(data) {
         const withCoords = data.filter(function (d) {
@@ -173,7 +185,7 @@
         speciesEl.innerHTML = "<span>Topp 15 arter (antal):</span> " +
           topSpecies.map(function (x) { return x[0] + " (" + x[1] + ")"; }).join(" · ");
 
-        const layer = L.layerGroup();
+        markersLayer.clearLayers();
         withCoords.forEach(function (d) {
           var vetenskap = d.species || d.scientificName || "—";
           var svenskt = svensktNamn(d);
@@ -186,13 +198,36 @@
             (d.stateProvince ? " (" + d.stateProvince + ")" : "");
           L.marker([d.decimalLatitude, d.decimalLongitude])
             .bindPopup(popup)
-            .addTo(layer);
+            .addTo(markersLayer);
         });
-        layer.addTo(map);
         if (withCoords.length > 0) {
           const bounds = L.latLngBounds(withCoords.map(function (d) { return [d.decimalLatitude, d.decimalLongitude]; }));
           map.fitBounds(bounds, { padding: [24, 24], maxZoom: 10 });
+        } else {
+          map.setView([62.2, 15.5], 5);
         }
+      }
+
+      function applyFilter() {
+        let data = allData;
+        if (currentRegion) {
+          data = allData.filter(function (d) { return (d.stateProvince || "") === currentRegion; });
+        }
+        render(data);
+      }
+
+      function initRegions(data) {
+        const regions = Array.from(new Set(data.map(function (d) { return d.stateProvince; }).filter(Boolean))).sort();
+        regions.forEach(function (r) {
+          const opt = document.createElement("option");
+          opt.value = r;
+          opt.textContent = r;
+          regionSelect.appendChild(opt);
+        });
+        regionSelect.addEventListener("change", function (e) {
+          currentRegion = e.target.value || "";
+          applyFilter();
+        });
       }
 
       function onError(err) {
@@ -226,7 +261,11 @@
           if (data && Array.isArray(data.results)) return data.results;
           return [];
         })
-        .then(render)
+        .then(function (data) {
+          allData = data;
+          initRegions(allData);
+          applyFilter();
+        })
         .catch(onError);
     })();
   </script>
