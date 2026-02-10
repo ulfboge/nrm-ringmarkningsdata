@@ -40,7 +40,7 @@
       overflow: auto;
     }
     .panel h2 { font-size: 0.875rem; margin: 0 0 0.5rem 0; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-    .controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--muted); }
+    .controls { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-top: 0.5rem; font-size: 0.875rem; color: var(--muted); }
     .controls select { background: #111827; color: var(--text); border-radius: 4px; border: 1px solid rgba(255,255,255,.12); padding: 0.2rem 0.4rem; }
     .stats { display: flex; gap: 1.5rem; flex-wrap: wrap; }
     .stat { font-size: 1.125rem; }
@@ -60,17 +60,17 @@
   <header>
     <h1>Ringmärkningsdata Sverige</h1>
     <p class="sub">Naturhistoriska riksmuseet (Ringmärkningscentralen) via <a href="https://www.gbif.org/dataset/4f70108a-dda7-4e8b-8298-babaee5182c3" target="_blank" rel="noopener">GBIF</a>. Kartan visar ett urval händelser för ringmärkta fåglar i Sverige (ringmärkningar, återfångster, dödfynd m.m.) med art, datum och plats – men händelsetypen kan inte särskiljas i denna vy.</p>
+    <div class="controls">
+      <label for="region-filter">Område:</label>
+      <select id="region-filter">
+        <option value="">Hela Sverige</option>
+      </select>
+    </div>
   </header>
   <main>
     <div id="map"></div>
     <div class="panel">
       <h2>Översikt</h2>
-      <div class="controls">
-        <label for="region-filter">Område:</label>
-        <select id="region-filter">
-          <option value="">Hela Sverige</option>
-        </select>
-      </div>
       <div id="stats" class="stats"></div>
       <div id="species-list"></div>
     </div>
