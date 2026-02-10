@@ -161,8 +161,8 @@
       L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
         attribution: "&copy; OpenStreetMap, &copy; CARTO",
       }).addTo(map);
-      // Rita ut länsgränser (GeoJSON) ovanpå kartan
-      fetch("https://raw.githubusercontent.com/okfse/sweden-geojson/master/swedish_regions.geojson")
+      // Rita ut länsgränser (GeoJSON) ovanpå kartan – officiella Lantmäteriet/SCB via Opendatasoft
+      fetch("https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/georef-sweden-lan/exports/geojson?lang=sv&timezone=Europe%2FStockholm")
         .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error(r.statusText)); })
         .then(function (geo) {
           L.geoJSON(geo, {
