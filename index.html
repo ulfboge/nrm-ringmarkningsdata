@@ -158,6 +158,23 @@
       L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
         attribution: "&copy; OpenStreetMap, &copy; CARTO",
       }).addTo(map);
+      // Rita ut länsgränser (GeoJSON) ovanpå kartan
+      fetch("https://raw.githubusercontent.com/okfse/sweden-geojson/master/swedish_regions.geojson")
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error(r.statusText)); })
+        .then(function (geo) {
+          L.geoJSON(geo, {
+            style: function () {
+              return {
+                color: "#4b5563",
+                weight: 1,
+                fillOpacity: 0.02
+              };
+            }
+          }).addTo(map);
+        })
+        .catch(function (err) {
+          console.error("Kunde inte ladda läns-GeoJSON:", err);
+        });
       let markersLayer = L.layerGroup().addTo(map);
       let allData = [];
       let currentRegion = "";
