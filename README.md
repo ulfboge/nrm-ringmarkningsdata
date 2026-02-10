@@ -28,6 +28,7 @@ Interaktiv karta över svensk fågelringmärkningsdata från **Naturhistoriska r
 - **Urval, inte fullständig bild:** Endast ett begränsat antal observationer hämtas via GBIF API, så kartan representerar ett smakprov – inte hela registret.
 - **Positionsosäkerhet:** Koordinater kan vara generaliserade eller avrundade beroende på hur datat publicerats.
 - **Tidsdimension:** Datumet i popupen hjälper dig se *när* en fågel ringmärkts/observerats, men kartan visar inte tidsanimering (alla år samtidigt).
+- **Händelsetyp:** Datasetet blandar olika typer av händelser (t.ex. första ringmärkning, återfångst, dödfynd), men i den öppna GBIF-versionen finns inga fält som tydligt talar om *vilken typ* en enskild rad är. I kartan tolkas därför varje punkt generellt som “en registrerad händelse för en ringmärkt individ”.
 
 För mer avancerade analyser (tidsserier, fullständiga dataset, filtrering på art/period) bör du hämta ned data direkt från GBIF och bearbeta den i t.ex. Python eller R.
 
